@@ -1,0 +1,30 @@
+name: CMake
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-10.15, ubuntu-18.04]
+
+    steps:
+    - name: Download deps
+      run: |
+         if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get update && sudo apt-get install -y libx11-dev libxext-dev libxft-dev libxinerama-dev libxcursor-dev libxrender-dev libxfixes-dev libgl1-mesa-dev libglu1-mesa-dev
+         fi
+      shell: bash
+    - uses: actions/checkout@v2
+    - name: Build
+      run: git clone https://github.com/fltk/fltk && cd fltk && mkdir lib && cmake -Bbin -DCMAKE_INSTALL_PREFIX=bin -DCMAKE_BUILD_TYPE=Release -DOPTION_USE_SYSTEM_LIBPNG=OFF -DOPTION_USE_SYSTEM_LIBJPEG=OFF -DOPTION_USE_SYSTEM_ZLIB=OFF -DOPTION_USE_GL=ON -DFLTK_BUILD_EXAMPLES=OFF -DFLTK_BUILD_TEST=OFF -DOPTION_USE_THREADS=ON -DOPTION_LARGE_FILE=ON -DOPTION_BUILD_HTML_DOCUMENTATION=OFF -DOPTION_BUILD_PDF_DOCUMENTATION=OFF && cmake --build bin --parallel --target install && export CFLTK_BUNDLE_DIR=$(pwd)/bin/lib 
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: lib_${{ matrix.os }}
+        path: $CFLTK_BUNDLE_DIR
